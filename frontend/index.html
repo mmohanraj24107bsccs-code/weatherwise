@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weatherwise — AI Weather Forecasts &amp; Personalized Insights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-deep:#0F1E3A;
+    --sky-mid:#1E3A63;
+    --sky-soft:#345385;
+    --amber:#E8A33D;
+    --teal:#3FAE9B;
+    --cream:#F6F1E7;
+    --ink:#0B1220;
+    --line: rgba(246,241,231,0.14);
+    --line-active: rgba(232,163,61,0.4);
+    --radius: 6px;
+    --radius-sm: 4px;
+    --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: linear-gradient(180deg, var(--sky-deep) 0%, var(--sky-mid) 50%, var(--sky-soft) 100%);
+    color: var(--cream);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px;}
+
+  header.top{display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;}
+  .brand{display:flex; align-items:baseline; gap:10px;}
+  .brand .mark{font-family:'Fraunces', serif; font-size: 28px; font-weight:600; letter-spacing: -0.01em;}
+  .brand .tag{font-size:13px; color: rgba(246,241,231,0.55);}
+  .authbox{font-size: 13px; display:flex; align-items:center; gap: 10px; color: rgba(246,241,231,0.75);}
+  .authbox button{background:none;border:1px solid var(--line); color: var(--cream); padding: 7px 14px; border-radius: var(--radius-sm); cursor:pointer; font-size: 13px; font-family:inherit; transition: var(--transition);}
+  .authbox button:hover{border-color: var(--amber); color: var(--amber);}
+  .planpill{border:1px solid var(--amber); color:var(--amber); padding: 3px 10px; border-radius: 999px; font-size:11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight:600;}
+
+  .status-bar{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--line);
+  }
+  .modebadge{display:inline-flex; align-items:center; gap:8px; font-size:12px; color: rgba(246,241,231,0.7); border:1px solid var(--line); padding: 5px 12px; border-radius:999px;}
+  .modebadge .dot{width:7px; height:7px; border-radius:50%; background:#888; transition: background 0.3s;}
+  .modebadge .dot.live{background: var(--teal); box-shadow: 0 0 8px var(--teal);}
+  .modebadge .dot.fallback{background: var(--amber); box-shadow: 0 0 8px var(--amber);}
+  .modebadge .dot.offline{background: #e0645a; box-shadow: 0 0 8px #e0645a;}
+  .top-links{display:flex; gap:14px; font-size:12px;}
+  .top-links a{color: rgba(246,241,231,0.6); text-decoration:none; transition: var(--transition);}
+  .top-links a:hover{color: var(--amber); text-decoration:underline;}
+
+  h1.hero{
+    font-family:'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.18;
+    max-width: 640px;
+    margin: 0 0 28px;
+  }
+  h1.hero em{font-style: italic; color: var(--amber);}
+
+  .searchrow{display:flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;}
+  .searchrow input{
+    flex: 1; min-width: 240px;
+    background: rgba(246,241,231,0.06);
+    border: 1px solid var(--line);
+    color: var(--cream);
+    padding: 13px 18px;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-family: inherit;
+    transition: var(--transition);
+  }
+  .searchrow input::placeholder{color: rgba(246,241,231,0.4);}
+  .searchrow input:focus{outline:none; border-color: var(--amber); background: rgba(246,241,231,0.09);}
+  .searchrow button.go{
+    background: var(--amber); color: var(--ink); border:none; font-weight:600;
+    padding: 13px 24px; border-radius: var(--radius); cursor:pointer; font-size:15px; font-family: inherit;
+    transition: var(--transition);
+  }
+  .searchrow button.go:hover{filter:brightness(1.1); transform: translateY(-1px);}
+  .searchrow button.locbtn{
+    background:none; border:1px solid var(--line); color: var(--cream);
+    padding: 13px 18px; border-radius: var(--radius); cursor:pointer; font-size:14px; font-family: inherit;
+    white-space:nowrap; transition: var(--transition);
+  }
+  .searchrow button.locbtn:hover{border-color: var(--teal); color: var(--teal);}
+  .searchrow button.locbtn:disabled{opacity:0.5; cursor:default;}
+  .locstatus{font-size:12.5px; color: rgba(246,241,231,0.55); margin: -14px 0 20px; min-height:16px;}
+  .locstatus.err{color:#e0645a;}
+  .loctag{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color: var(--teal); border:1px solid rgba(63,174,155,0.4); padding:3px 10px; border-radius:999px; margin-bottom:12px;}
+
+  .grid{display:grid; grid-template-columns: 1.35fr 1fr; gap: 24px;}
+  @media (max-width: 820px){ .grid{grid-template-columns: 1fr;} }
+
+  .panel{
+    background: rgba(246,241,231,0.05);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px;
+    backdrop-filter: blur(10px);
+    transition: var(--transition);
+  }
+  .panel:hover{border-color: var(--line-active);}
+  .weatherpanel{position:relative; overflow:hidden;}
+  .weatherpanel .cond-icon{font-size: 52px; line-height:1;}
+  .weatherpanel .city{font-family:'Fraunces', serif; font-size: 26px; margin: 14px 0 2px; font-weight:500;}
+  .weatherpanel .desc{color: rgba(246,241,231,0.65); font-size: 14px; text-transform: capitalize;}
+  .weatherpanel .temp{font-family:'Fraunces', serif; font-size: 72px; font-weight:500; margin: 18px 0 6px; line-height:1;}
+  .statrow{display:flex; gap: 28px; margin-top: 20px; padding-top:18px; border-top:1px solid var(--line); flex-wrap:wrap;}
+  .stat{font-size:13px; color: rgba(246,241,231,0.55);}
+  .stat b{display:block; color: var(--cream); font-size:16px; font-weight:500; margin-top:3px;}
+
+  .forecast{display:flex; gap: 10px; margin-top: 24px; overflow-x:auto;}
+  .fday{flex:1; min-width: 68px; text-align:center; background: rgba(246,241,231,0.04); border-radius: var(--radius-sm); padding: 12px 6px; border:1px solid rgba(246,241,231,0.06);}
+  .fday .d{font-size:11px; color:rgba(246,241,231,0.5); text-transform:uppercase; letter-spacing:0.04em;}
+  .fday .hi{font-size:15px; font-weight:600; margin-top:6px;}
+  .fday .lo{font-size:12px; color:rgba(246,241,231,0.45);}
+
+  .aipanel h3{font-family:'Fraunces', serif; font-weight:500; font-size:19px; margin:0 0 4px;}
+  .aipanel .src{font-size:11px; color: var(--teal); margin-bottom:14px; display:inline-block; border-bottom: 1px dotted rgba(63,174,155,0.4);}
+  .aipanel p.summary{font-size:14.5px; line-height:1.6; color: rgba(246,241,231,0.92); margin: 0 0 16px;}
+  .aipanel ul{margin:0; padding-left: 18px;}
+  .aipanel li{font-size:14px; line-height:1.65; color: rgba(246,241,231,0.8); margin-bottom:4px;}
+  .activity-row{display:flex; gap:8px; margin-top:20px;}
+  .activity-row input{flex:1; background: rgba(246,241,231,0.06); border:1px solid var(--line); color:var(--cream); padding:10px 14px; border-radius: var(--radius-sm); font-size:13px; font-family:inherit;}
+  .activity-row input:focus{outline:none; border-color: var(--teal);}
+  .activity-row button{background:none; border:1px solid var(--teal); color:var(--teal); padding:10px 16px; border-radius:var(--radius-sm); cursor:pointer; font-size:13px; font-family:inherit; font-weight:500; transition: var(--transition);}
+  .activity-row button:hover{background: var(--teal); color: var(--ink);}
+
+  .favorites{margin-top: 22px;}
+  .favorites h3{font-family:'Fraunces', serif; font-weight:500; font-size:19px; margin:0 0 14px;}
+  .favlist{display:flex; flex-direction:column; gap:8px;}
+  .favitem{display:flex; justify-content:space-between; align-items:center; background: rgba(246,241,231,0.04); padding: 11px 14px; border-radius: var(--radius-sm); font-size:14px; cursor:pointer; border: 1px solid transparent; transition: var(--transition);}
+  .favitem:hover{border-color: var(--line); background: rgba(246,241,231,0.08);}
+  .favitem .fname{display:flex; align-items:center; gap:10px;}
+  .favitem .ftemp{color: var(--amber); font-weight:600;}
+  .favitem .rm{background:none; border:none; color: rgba(246,241,231,0.35); cursor:pointer; font-size:16px; padding:2px 6px; border-radius:3px;}
+  .favitem .rm:hover{color:#e0645a; background:rgba(224,100,90,0.15);}
+  .addfav{margin-top:14px; width:100%; background:none; border:1px dashed var(--line); color: rgba(246,241,231,0.65); padding:11px; border-radius:var(--radius-sm); cursor:pointer; font-size:13px; font-family:inherit; transition: var(--transition);}
+  .addfav:hover{border-color: var(--amber); color: var(--amber); background: rgba(232,163,61,0.05);}
+  .capnote{font-size:12px; color: rgba(246,241,231,0.45); margin-top:10px;}
+
+  .authmodal{position:fixed; inset:0; background: rgba(11,18,32,0.75); backdrop-filter: blur(4px); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50;}
+  .authcard{background: var(--sky-deep); border:1px solid var(--line); border-radius: var(--radius); padding: 30px; width:100%; max-width:380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
+  .authcard h3{font-family:'Fraunces', serif; font-weight:500; margin:0 0 18px; font-size:22px;}
+  .authcard input{width:100%; background: rgba(246,241,231,0.06); border:1px solid var(--line); color:var(--cream); padding:12px 14px; border-radius:var(--radius-sm); font-size:14px; margin-bottom:12px; font-family:inherit;}
+  .authcard input:focus{outline:none; border-color: var(--amber);}
+  .authcard .submit{width:100%; background: var(--amber); color:var(--ink); border:none; padding:12px; border-radius:var(--radius-sm); font-weight:600; cursor:pointer; margin-top:6px; font-family:inherit; transition: var(--transition);}
+  .authcard .submit:hover{filter:brightness(1.1);}
+  .authcard .switch{text-align:center; font-size:13px; color: rgba(246,241,231,0.5); margin-top:16px; cursor:pointer;}
+  .authcard .switch span{color:var(--amber); cursor:pointer; font-weight:500;}
+  .authcard .switch span:hover{text-decoration:underline;}
+  .authcard .close{float:right; background:none; border:none; color: rgba(246,241,231,0.4); cursor:pointer; font-size:20px; line-height:1;}
+  .authcard .close:hover{color:var(--cream);}
+  .err{color:#e0645a; font-size:12.5px; margin-top:4px; min-height:16px;}
+
+  footer.note{margin-top: 48px; font-size:12px; color: rgba(246,241,231,0.4); text-align:center; line-height:1.6;}
+  footer.note code{background: rgba(246,241,231,0.08); padding: 2px 6px; border-radius: 3px; color: var(--amber);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <span class="mark">Weatherwise</span>
+      <span class="tag">AI-powered forecasts &amp; personalized insight</span>
+    </div>
+    <div class="authbox" id="authbox"></div>
+  </header>
+
+  <div class="status-bar">
+    <div class="modebadge" id="modeBadge">
+      <span class="dot" id="modeDot"></span>
+      <span id="modeText">Checking API connection…</span>
+    </div>
+    <div class="top-links">
+      <a href="demo.html">Open Standalone Demo</a>
+      <a href="http://localhost:5000/api/health" target="_blank">API Health Status ↗</a>
+    </div>
+  </div>
+
+  <h1 class="hero">Know what today's sky means <em>for you</em> — not just the numbers.</h1>
+
+  <div class="searchrow">
+    <input id="cityInput" type="text" placeholder="Search a city — try London, Tokyo, New York, or Chennai" onkeydown="if(event.key==='Enter') searchCity()" />
+    <button class="go" id="searchBtn" onclick="searchCity()">Get forecast</button>
+    <button class="locbtn" id="locBtn" onclick="locateUser()">📍 Use my location</button>
+  </div>
+  <div class="locstatus" id="locStatus"></div>
+
+  <div class="grid">
+    <div class="panel weatherpanel" id="weatherPanel"></div>
+
+    <div>
+      <div class="panel aipanel" id="aiPanel"></div>
+      <div class="panel favorites">
+        <h3>Saved cities</h3>
+        <div class="favlist" id="favList"></div>
+        <button class="addfav" id="addFavBtn" onclick="saveCurrentCity()">+ Save current city</button>
+        <div class="capnote" id="capNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">
+    Weatherwise · Full-Stack Node.js / Express / MongoDB / Gemini AI<br>
+    Connected to backend REST API at <code>http://localhost:5000/api</code>
+  </footer>
+</div>
+
+<script>
+/* ---------- Configuration & State ---------- */
+const API_BASE = 'http://localhost:5000/api';
+
+const CONDITIONS = [
+  { main: 'Clear', description: 'clear sky', icon: '☀️' },
+  { main: 'Clouds', description: 'scattered clouds', icon: '⛅' },
+  { main: 'Rain', description: 'light rain', icon: '🌧️' },
+  { main: 'Thunderstorm', description: 'thunderstorms', icon: '⛈️' },
+  { main: 'Snow', description: 'light snow', icon: '❄️' },
+  { main: 'Mist', description: 'misty', icon: '🌫️' },
+];
+
+function seededPick(seed, arr){
+  let hash = 0;
+  for(const c of String(seed)) hash += c.charCodeAt(0);
+  return arr[hash % arr.length];
+}
+
+function buildFallbackWeather(cityRaw){
+  const city = cityRaw.trim();
+  const cond = seededPick(city, CONDITIONS);
+  const baseTemp = 15 + (city.length % 15);
+  return {
+    source: 'fallback',
+    city: city.replace(/\b\w/g, l => l.toUpperCase()),
+    temperature: baseTemp,
+    feelsLike: baseTemp - 1,
+    humidity: 40 + (city.length % 40),
+    windSpeed: 2 + (city.length % 10),
+    condition: cond.main,
+    description: cond.description,
+    icon: cond.icon,
+    forecast: Array.from({length:5}).map((_,i)=>({
+      day: i,
+      high: baseTemp + i,
+      low: baseTemp - 4 + i,
+      condition: seededPick(city+i, CONDITIONS).icon,
+    }))
+  };
+}
+
+function buildFallbackInsight(weather, activity){
+  const tips = [];
+  if(weather.condition==='Rain' || weather.condition==='Thunderstorm') tips.push('Pack a compact umbrella and waterproof shoes.');
+  if(weather.temperature>=28) tips.push('Stay hydrated and plan outdoor time for early morning or evening.');
+  if(weather.temperature<=10) tips.push('Layer up — a warm jacket and gloves are a good idea.');
+  if(weather.windSpeed>=8) tips.push('It will be breezy — secure loose items if you are outdoors.');
+  if(activity) tips.push(`For ${activity}, check conditions again closer to the time — light can shift fast near ${weather.condition.toLowerCase()} skies.`);
+  if(tips.length===0) tips.push('Conditions look pleasant — a great day for outdoor plans.');
+  return {
+    source: 'fallback',
+    summary: `${weather.city} is looking ${weather.description} with a high near ${weather.temperature}°C, feeling like ${weather.feelsLike}°C.`,
+    recommendations: tips.slice(0,3)
+  };
+}
+
+const CITY_COORDS = [
+  {name:'London',lat:51.5072,lon:-0.1276},{name:'New York',lat:40.7128,lon:-74.0060},
+  {name:'Tokyo',lat:35.6762,lon:139.6503},{name:'Paris',lat:48.8566,lon:2.3522},
+  {name:'Chennai',lat:13.0827,lon:80.2707},{name:'Mumbai',lat:19.0760,lon:72.8777},
+  {name:'Bengaluru',lat:12.9716,lon:77.5946},{name:'Delhi',lat:28.7041,lon:77.1025},
+  {name:'Singapore',lat:1.3521,lon:103.8198},{name:'Sydney',lat:-33.8688,lon:151.2093},
+  {name:'Berlin',lat:52.5200,lon:13.4050},{name:'Toronto',lat:43.6532,lon:-79.3832},
+];
+
+function haversine(lat1, lon1, lat2, lon2){
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+function nearestCity(lat, lon){
+  let best = CITY_COORDS[0], bestDist = Infinity;
+  for(const c of CITY_COORDS){
+    const d = haversine(lat, lon, c.lat, c.lon);
+    if(d < bestDist){ bestDist = d; best = c; }
+  }
+  return { city: best.name, distanceKm: Math.round(bestDist) };
+}
+
+let state = {
+  apiStatus: 'checking', // 'live' | 'fallback' | 'offline'
+  user: null,          // { id, name, email, plan }
+  token: localStorage.getItem('weatherwise_token') || null,
+  currentCity: null,   // weather object
+  currentInsight: null,
+  activity: '',
+  favorites: [],        // [{ _id, name, weather }]
+  isLiveLocation: false,
+  locAccuracyNote: '',
+  loading: false,
+};
+
+const DAY_LABELS = ['Today','Tomorrow','Day 3','Day 4','Day 5'];
+
+/* ---------- API Calls ---------- */
+async function checkHealth(){
+  const dot = document.getElementById('modeDot');
+  const text = document.getElementById('modeText');
+  try {
+    const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3500) });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if(data.dbConnected){
+      state.apiStatus = 'live';
+      dot.className = 'dot live';
+      text.textContent = 'Live Backend API · MongoDB Connected';
+    } else {
+      state.apiStatus = 'fallback';
+      dot.className = 'dot fallback';
+      text.textContent = 'Live Backend API · In-Memory Fallback Mode';
+    }
+  } catch(e) {
+    state.apiStatus = 'offline';
+    dot.className = 'dot offline';
+    text.textContent = 'Backend Offline · Running Client-side Fallback';
+  }
+}
+
+async function apiFetchWeather(cityName){
+  try {
+    const res = await fetch(`${API_BASE}/weather/current?city=${encodeURIComponent(cityName)}`, { signal: AbortSignal.timeout(5000) });
+    if(!res.ok) throw new Error('API error');
+    const data = await res.json();
+    if(data.success && data.weather){
+      // Ensure forecast exists
+      if(!data.weather.forecast){
+        data.weather.forecast = buildFallbackWeather(cityName).forecast;
+      }
+      // Format icon if standard openweather icon code
+      if(!data.weather.icon.match(/[\uD800-\uDBFF]|[\u2700-\u27BF]/)){
+        const mapped = seededPick(cityName, CONDITIONS).icon;
+        data.weather.icon = mapped;
+      }
+      return data.weather;
+    }
+  } catch(err){
+    console.warn('[frontend] Weather fetch error, falling back:', err.message);
+  }
+  return buildFallbackWeather(cityName);
+}
+
+async function apiFetchInsight(cityName, activity){
+  try {
+    const url = `${API_BASE}/ai/insight?city=${encodeURIComponent(cityName)}${activity ? `&activity=${encodeURIComponent(activity)}` : ''}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if(!res.ok) throw new Error('API error');
+    const data = await res.json();
+    if(data.success && data.insight){
+      return data.insight;
+    }
+  } catch(err){
+    console.warn('[frontend] AI insight error, falling back:', err.message);
+  }
+  const w = state.currentCity || buildFallbackWeather(cityName);
+  return buildFallbackInsight(w, activity);
+}
+
+async function fetchUserProfile(){
+  if(!state.token) return;
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    if(!res.ok){
+      if(res.status === 401) logout();
+      return;
+    }
+    const data = await res.json();
+    if(data.success && data.user){
+      state.user = data.user;
+      renderAuthBox();
+      fetchFavorites();
+    }
+  } catch(e) {
+    console.warn('[frontend] Profile fetch failed:', e);
+  }
+}
+
+async function fetchFavorites(){
+  if(!state.token) return;
+  try {
+    const res = await fetch(`${API_BASE}/weather/favorites`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    if(!res.ok) return;
+    const data = await res.json();
+    if(data.success && data.results){
+      state.favorites = data.results.map(r => ({
+        id: r.city._id || r.city.id,
+        name: r.city.name,
+        country: r.city.country,
+        weather: r.weather || buildFallbackWeather(r.city.name)
+      }));
+      renderFavorites();
+    }
+  } catch(e) {
+    console.warn('[frontend] Favorites fetch failed:', e);
+  }
+}
+
+/* ---------- Rendering ---------- */
+function render(){
+  renderAuthBox();
+  renderWeather();
+  renderAI();
+  renderFavorites();
+}
+
+function renderAuthBox(){
+  const box = document.getElementById('authbox');
+  if(state.user){
+    box.innerHTML = `<span class="planpill">${state.user.plan || 'FREE'}</span>
+      <span>${state.user.name}</span>
+      <button onclick="logout()">Log out</button>`;
+  } else {
+    box.innerHTML = `<button onclick="openAuth('login')">Log in</button><button onclick="openAuth('register')">Sign up</button>`;
+  }
+}
+
+function renderWeather(){
+  const panel = document.getElementById('weatherPanel');
+  const w = state.currentCity;
+  if(!w){
+    panel.innerHTML = `<div class="cond-icon">🌤️</div><div class="city">Search a city to begin</div><div class="desc">Try "London", "Tokyo", or use your location</div>`;
+    return;
+  }
+  const locTag = state.isLiveLocation
+    ? `<div class="loctag">📍 Your current location${state.locAccuracyNote ? ` · ${state.locAccuracyNote}` : ''}</div>`
+    : '';
+  panel.innerHTML = `
+    ${locTag}
+    <div class="cond-icon">${w.icon || '☀️'}</div>
+    <div class="city">${w.city}</div>
+    <div class="desc">${w.description}</div>
+    <div class="temp">${w.temperature}°C</div>
+    <div class="statrow">
+      <div class="stat">Feels like<b>${w.feelsLike}°C</b></div>
+      <div class="stat">Humidity<b>${w.humidity}%</b></div>
+      <div class="stat">Wind<b>${w.windSpeed} m/s</b></div>
+      <div class="stat">Data Source<b>${(w.source || 'api').toUpperCase()}</b></div>
+    </div>
+    <div class="forecast">
+      ${(w.forecast || []).map((f,i)=>`
+        <div class="fday">
+          <div class="d">${DAY_LABELS[i] || `Day ${i+1}`}</div>
+          <div style="font-size:18px; margin: 4px 0;">${f.condition || '🌤️'}</div>
+          <div class="hi">${f.high}°</div>
+          <div class="lo">${f.low}°</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderAI(){
+  const panel = document.getElementById('aiPanel');
+  const w = state.currentCity;
+  if(!w){
+    panel.innerHTML = `<h3>AI insight</h3><span class="src">Google Gemini</span><p class="summary">Search a city to get a personalized weather summary and recommendations.</p>`;
+    return;
+  }
+  const insight = state.currentInsight || buildFallbackInsight(w, state.activity);
+  const recs = insight.recommendations && insight.recommendations.length > 0
+    ? `<ul>${insight.recommendations.map(t=>`<li>${t}</li>`).join('')}</ul>`
+    : '';
+
+  panel.innerHTML = `
+    <h3>AI insight</h3>
+    <span class="src">Powered by ${insight.source === 'gemini' ? 'Google Gemini 1.5' : 'Gemini Fallback Engine'}</span>
+    <p class="summary">${insight.summary}</p>
+    ${recs}
+    <div class="activity-row">
+      <input id="activityInput" placeholder="Planning something? e.g. morning jog, flight, hike" value="${state.activity || ''}" onkeydown="if(event.key==='Enter') updateActivity()" />
+      <button onclick="updateActivity()">Ask AI</button>
+    </div>
+  `;
+}
+
+function renderFavorites(){
+  const list = document.getElementById('favList');
+  const capNote = document.getElementById('capNote');
+  if(!state.user){
+    list.innerHTML = `<div style="font-size:13px; color:rgba(246,241,231,0.45); padding: 8px 0;">Log in or create an account to save cities to your profile.</div>`;
+    capNote.textContent = '';
+    return;
+  }
+  if(!state.favorites || state.favorites.length === 0){
+    list.innerHTML = `<div style="font-size:13px; color:rgba(246,241,231,0.45); padding: 8px 0;">No saved cities yet. Click "+ Save current city" below.</div>`;
+  } else {
+    list.innerHTML = state.favorites.map((f, i)=>`
+      <div class="favitem" onclick="loadFavorite(${i})">
+        <div class="fname">${f.weather.icon || '📍'} ${f.name}</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="ftemp">${f.weather.temperature}°C</span>
+          <button class="rm" title="Remove" onclick="event.stopPropagation(); removeFavorite('${f.id || i}', ${i})">×</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  const plan = (state.user && state.user.plan) || 'free';
+  if(plan === 'free'){
+    capNote.textContent = `Free plan: ${(state.favorites && state.favorites.length) || 0}/3 cities saved. (3-city server limit enforced)`;
+  } else {
+    capNote.textContent = 'Premium plan: unlimited saved cities.';
+  }
+}
+
+/* ---------- User Actions ---------- */
+async function searchCity(){
+  const input = document.getElementById('cityInput');
+  const btn = document.getElementById('searchBtn');
+  const val = input.value.trim();
+  if(!val) return;
+
+  btn.textContent = 'Loading…';
+  btn.disabled = true;
+  state.isLiveLocation = false;
+
+  const weather = await apiFetchWeather(val);
+  state.currentCity = weather;
+  state.currentInsight = await apiFetchInsight(weather.city, state.activity);
+
+  btn.textContent = 'Get forecast';
+  btn.disabled = false;
+  render();
+}
+
+function setLocStatus(msg, isErr){
+  const el = document.getElementById('locStatus');
+  el.textContent = msg;
+  el.className = 'locstatus' + (isErr ? ' err' : '');
+}
+
+function locateUser(){
+  if(!navigator.geolocation){
+    setLocStatus('Geolocation is not supported in this browser.', true);
+    return;
+  }
+  const btn = document.getElementById('locBtn');
+  btn.disabled = true;
+  btn.textContent = '📍 Locating…';
+  setLocStatus('Requesting your location from browser…');
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      const { city, distanceKm } = nearestCity(latitude, longitude);
+      state.isLiveLocation = true;
+      state.locAccuracyNote = `~${distanceKm} km from ${city}`;
+      btn.disabled = false;
+      btn.textContent = '📍 Use my location';
+      setLocStatus(`Location detected (${latitude.toFixed(2)}, ${longitude.toFixed(2)}). Loading forecast for ${city}…`);
+      
+      const weather = await apiFetchWeather(city);
+      state.currentCity = weather;
+      state.currentInsight = await apiFetchInsight(city, state.activity);
+      render();
+    },
+    (err) => {
+      btn.disabled = false;
+      btn.textContent = '📍 Use my location';
+      setLocStatus('Could not access your location. Try searching a city manually above.', true);
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
+async function updateActivity(){
+  const val = document.getElementById('activityInput').value.trim();
+  state.activity = val;
+  if(state.currentCity){
+    const panel = document.getElementById('aiPanel');
+    panel.querySelector('p.summary').textContent = 'Generating updated advice…';
+    state.currentInsight = await apiFetchInsight(state.currentCity.city, state.activity);
+    renderAI();
+  }
+}
+
+async function saveCurrentCity(){
+  if(!state.user){ openAuth('login'); return; }
+  if(!state.currentCity){ alert('Please search a city first.'); return; }
+
+  const cityName = state.currentCity.city;
+  if(state.favorites.some(f => f.name.toLowerCase() === cityName.toLowerCase())){
+    alert(`${cityName} is already in your saved cities.`);
+    return;
+  }
+
+  // If live backend available, call POST /api/weather/favorites
+  if(state.apiStatus === 'live' && state.token){
+    try {
+      const res = await fetch(`${API_BASE}/weather/favorites`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.token}`
+        },
+        body: JSON.stringify({
+          name: cityName,
+          country: 'Global',
+          lat: 0,
+          lon: 0
+        })
+      });
+      const data = await res.json();
+      if(!res.ok){
+        alert(data.message || 'Could not save city.');
+        return;
+      }
+      await fetchFavorites();
+      return;
+    } catch(e) {
+      console.warn('Backend save failed, using local store:', e);
+    }
+  }
+
+  // Fallback local save if offline
+  if(state.user.plan === 'free' && state.favorites.length >= 3){
+    alert('Free plan is limited to 3 saved cities - upgrade to Premium for unlimited cities.');
+    return;
+  }
+  state.favorites.push({
+    id: 'local_' + Date.now(),
+    name: cityName,
+    weather: state.currentCity
+  });
+  renderFavorites();
+}
+
+async function removeFavorite(id, idx){
+  if(state.apiStatus === 'live' && state.token && id && !id.startsWith('local_')){
+    try {
+      const res = await fetch(`${API_BASE}/weather/favorites/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${state.token}` }
+      });
+      if(res.ok){
+        await fetchFavorites();
+        return;
+      }
+    } catch(e) {
+      console.warn('Backend remove failed:', e);
+    }
+  }
+  state.favorites.splice(idx, 1);
+  renderFavorites();
+}
+
+function loadFavorite(idx){
+  if(state.favorites[idx]){
+    state.currentCity = state.favorites[idx].weather;
+    state.activity = '';
+    state.isLiveLocation = false;
+    render();
+  }
+}
+
+function logout(){
+  state.user = null;
+  state.token = null;
+  state.favorites = [];
+  localStorage.removeItem('weatherwise_token');
+  render();
+}
+
+/* ---------- Auth Modal & Network Flow ---------- */
+let authMode = 'login';
+function openAuth(mode){
+  authMode = mode;
+  const modal = document.createElement('div');
+  modal.className = 'authmodal';
+  modal.id = 'authModal';
+  modal.innerHTML = authCardHTML();
+  document.body.appendChild(modal);
+}
+
+function authCardHTML(){
+  const isLogin = authMode === 'login';
+  return `
+    <div class="authcard">
+      <button class="close" onclick="closeAuth()">×</button>
+      <h3>${isLogin ? 'Log in to Weatherwise' : 'Create your account'}</h3>
+      ${isLogin ? '' : '<input id="authName" placeholder="Full Name" />'}
+      <input id="authEmail" placeholder="Email address" />
+      <input id="authPassword" type="password" placeholder="Password (min 8 characters)" />
+      <div class="err" id="authErr"></div>
+      <button class="submit" id="authSubmitBtn" onclick="submitAuth()">${isLogin ? 'Log in' : 'Create Account'}</button>
+      <div class="switch">${isLogin ? "Don't have an account? " : "Already have an account? "}<span onclick="toggleAuth()">${isLogin ? 'Sign up' : 'Log in'}</span></div>
+    </div>
+  `;
+}
+
+function toggleAuth(){
+  authMode = authMode === 'login' ? 'register' : 'login';
+  document.getElementById('authModal').innerHTML = authCardHTML();
+}
+
+function closeAuth(){
+  const modal = document.getElementById('authModal');
+  if(modal) modal.remove();
+}
+
+async function submitAuth(){
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errBox = document.getElementById('authErr');
+  const btn = document.getElementById('authSubmitBtn');
+  errBox.textContent = '';
+
+  if(!email || !password){ errBox.textContent = 'Email and password are required.'; return; }
+  if(password.length < 8){ errBox.textContent = 'Password must be at least 8 characters.'; return; }
+
+  let name = '';
+  if(authMode === 'register'){
+    name = document.getElementById('authName').value.trim();
+    if(!name){ errBox.textContent = 'Name is required.'; return; }
+  }
+
+  btn.textContent = 'Processing…';
+  btn.disabled = true;
+
+  try {
+    const endpoint = authMode === 'register' ? `${API_BASE}/auth/register` : `${API_BASE}/auth/login`;
+    const payload = authMode === 'register' ? { name, email, password } : { email, password };
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if(!res.ok){
+      errBox.textContent = data.message || 'Authentication failed.';
+      btn.textContent = authMode === 'login' ? 'Log in' : 'Create Account';
+      btn.disabled = false;
+      return;
+    }
+
+    state.token = data.token;
+    state.user = data.user;
+    if(data.token) localStorage.setItem('weatherwise_token', data.token);
+
+    closeAuth();
+    render();
+    fetchFavorites();
+  } catch(err) {
+    // If backend offline, graceful fallback
+    console.warn('Auth offline fallback:', err);
+    state.user = {
+      name: name || email.split('@')[0],
+      email: email,
+      plan: 'free'
+    };
+    closeAuth();
+    render();
+  }
+}
+
+/* ---------- App Initialization ---------- */
+async function init(){
+  await checkHealth();
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialCity = urlParams.get('city') || 'London';
+  const initialActivity = urlParams.get('activity') || '';
+  if(initialActivity) state.activity = initialActivity;
+  if(urlParams.get('auth') === 'demo') {
+    state.user = { name: 'Alex Rivers', email: 'alex.demo@weatherwise.app', plan: 'free' };
+    state.favorites = [
+      { name: 'Tokyo', weather: buildFallbackWeather('Tokyo') },
+      { name: 'London', weather: buildFallbackWeather('London') },
+      { name: 'Paris', weather: buildFallbackWeather('Paris') }
+    ];
+  }
+  if(state.token && !state.user) {
+    await fetchUserProfile();
+  }
+  state.currentCity = await apiFetchWeather(initialCity);
+  state.currentInsight = await apiFetchInsight(initialCity, state.activity);
+  render();
+  if(urlParams.get('modal') === 'auth') {
+    openAuth('register');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

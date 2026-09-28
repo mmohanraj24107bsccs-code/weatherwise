@@ -1,0 +1,45 @@
+WEATHERWISE - RUN GUIDE
+
+RECOMMENDED: 1-STEP JAVASCRIPT RUNNER (No Python required!)
+============================================================
+Requirements: Node.js (v18+)
+
+Open your terminal in the project root folder and run:
+
+    node run.js
+
+That's it! This single script starts:
+- Frontend Web App: http://localhost:8080/
+- Standalone Demo:  http://localhost:8080/demo.html
+- Backend REST API: http://localhost:5000/api
+- API Health Check: http://localhost:5000/api/health
+
+Press Ctrl+C at any time to stop both servers.
+
+------------------------------------------------------------
+ALTERNATIVE: MANUAL MULTI-TERMINAL SETUP
+------------------------------------------------------------
+
+WINDOWS:
+Terminal 1:
+    cd backend
+    npm.cmd install
+    npm.cmd start
+
+Terminal 2:
+    cd frontend
+    py -m http.server 8080
+
+LINUX / macOS:
+Terminal 1:
+    cd backend
+    npm install
+    npm start
+
+Terminal 2:
+    cd frontend
+    python3 -m http.server 8080
+
+URLs:
+Frontend: http://localhost:8080/
+API:      http://localhost:5000/api/health

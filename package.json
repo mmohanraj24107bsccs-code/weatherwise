@@ -1,0 +1,20 @@
+{
+  "name": "weatherwise-project",
+  "version": "1.0.0",
+  "description": "Weatherwise - AI-Powered Weather Forecasts and Personalized Insights",
+  "main": "run.js",
+  "scripts": {
+    "start": "node run.js",
+    "dev": "node run.js",
+    "backend": "node backend/server.js"
+  },
+  "keywords": [
+    "weather",
+    "ai",
+    "gemini",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC"
+}
