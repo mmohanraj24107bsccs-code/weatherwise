@@ -316,3 +316,9 @@ graph LR
 
 ---
 *Documentation compiled for the Weatherwise Project — 2026.*
+
+
+
+Code:https://drive.google.com/drive/folders/1tqfVdpyb3Nmkf5jv6udrEfNb3uutmANA?usp=drive_link
+demo:https://drive.google.com/file/d/1IdCY6u5o0IcZ5xDs4-RWgJSBPaJu5Xgm/view?usp=drive_link
+apitest:https://drive.google.com/file/d/1MDi4-VqmErjBZScmldBf2-Bh680Wr6g3/view?usp=drive_link
